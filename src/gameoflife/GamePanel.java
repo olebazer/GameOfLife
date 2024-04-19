@@ -8,13 +8,16 @@ import javax.swing.*;
 import javax.swing.Timer;
 
 public class GamePanel extends JPanel implements ActionListener, MouseListener {
-    private final int WIDTH = 1200;
-    private final int HEIGHT = 900;
-    private final int CELL_WIDTH = 15;
-    private final int CELL_HEIGHT = 15;
+    private final int WIDTH = 1152;
+    private final int HEIGHT = 800;
+    private final int CELL_WIDTH = 16;
+    private final int CELL_HEIGHT = 16;
+    private final int PADDING = 2;
     private final int ROWS = HEIGHT / CELL_HEIGHT;
     private final int COLUMNS = WIDTH / CELL_WIDTH;
-    private final int SPEED = 800;
+    private final int SPEED = 200;
+    private final int MIN_NEIGHBORS = 1;
+    private final int MAX_NEIGHBORS = 4;
     private final Timer timer = new Timer(SPEED, this);
     private boolean[][] cells = new boolean[ROWS][COLUMNS];
     private boolean running = false;
@@ -24,7 +27,16 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
         this.setLayout(null);
         this.setBackground(Color.BLACK);
         this.addMouseListener(this);
+        this.fillDefaultCells();
         timer.start();
+    }
+
+    public void fillDefaultCells() {
+        for (int i = 0; i < cells.length; i++) {
+            for (int j = 0; j < cells[i].length; j++) {
+                cells[i][j] = false;
+            }
+        }
     }
 
     @Override
@@ -32,7 +44,7 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
         super.paintComponent(g);
         Graphics2D g2D = (Graphics2D)g;
 
-        g2D.setPaint(new Color(21, 21, 21));
+        g2D.setPaint(new Color(26, 26, 26));
 
         for (int i = 0; i < COLUMNS; i++) {
             g2D.drawLine(i * CELL_WIDTH, 0, i * CELL_WIDTH, HEIGHT);
@@ -42,13 +54,15 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
             g2D.drawLine(0, i * CELL_HEIGHT, WIDTH, i * CELL_HEIGHT);
         }
 
-        g2D.setPaint(new Color(39, 125, 255));
+        g2D.setPaint(new Color(50, 168, 135));
 
         for (int i = 0; i < cells.length; i++) {
             for (int j = 0; j < cells[i].length; j++) {
                 if (cells[i][j] == true) {
-                    g2D.fillRect(j * CELL_WIDTH, i * CELL_HEIGHT, CELL_WIDTH,
-                        CELL_WIDTH);
+                    g2D.fillRect(j * CELL_WIDTH + PADDING,
+                        i * CELL_HEIGHT + PADDING,
+                        CELL_WIDTH - PADDING,
+                        CELL_WIDTH - PADDING);
                 }
             }
         }
@@ -59,8 +73,7 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
 
         if (row > 0 && column > 0){
             if (cells[row - 1][column - 1] == true) {
-                counter++;
-            }
+                counter++; }
         }
 
         if (row > 0) {
@@ -121,9 +134,14 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
                 int livingNeighbors = getLivingNeighbors(i, j);
                 int[] cellPosition = {i, j};
 
-                if (livingNeighbors < 2 || livingNeighbors > 2) {
+                if (cells[i][j] == true &&
+                    livingNeighbors <= MIN_NEIGHBORS ||
+                    livingNeighbors >= MAX_NEIGHBORS) {
                     deadCells.add(cellPosition);
-                } else {
+                } else if (cells[i][j] == true) {
+                    livingCells.add(cellPosition);
+                } else if (cells[i][j] == false &&
+                    livingNeighbors == 3) {
                     livingCells.add(cellPosition);
                 }
             }
@@ -147,12 +165,7 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
                 running = true;
             } else {
                 running = false;
-
-                for (int i = 0; i < cells.length; i++) {
-                    for (int j = 0; j < cells[i].length; j++) {
-                        cells[i][j] = false;
-                    }
-                }
+                fillDefaultCells();
             }
         } else {
             int row = e.getY() / CELL_HEIGHT;
